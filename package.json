@@ -1,0 +1,19 @@
+{
+  "name": "trendshops-mern",
+  "version": "1.0.0",
+  "description": "TrendShops - Full MERN Stack E-Commerce Platform (India)",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "build": "cd client && npm run build",
+    "lint": "cd client && npm run lint",
+    "check": "cd server && npm run check",
+    "test": "cd server && npm test",
+    "start": "cd server && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

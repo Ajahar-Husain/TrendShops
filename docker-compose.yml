@@ -1,0 +1,11 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - trendshops-mongodb:/data/db
+
+volumes:
+  trendshops-mongodb:

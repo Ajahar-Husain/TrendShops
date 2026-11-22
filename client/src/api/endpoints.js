@@ -1,0 +1,42 @@
+export const API = {
+  AUTH: {
+    LOGIN: '/api/auth/login',
+    REGISTER: '/api/auth/register',
+    ME: '/api/auth/me',
+    WISHLIST: '/api/auth/me/wishlist',
+    VERIFY_EMAIL: '/api/auth/me/email-verification',
+    VERIFY_EMAIL_CONFIRM: '/api/auth/email-verification/confirm',
+    REFRESH: '/api/auth/refresh-token',
+    LOGOUT: '/api/auth/logout',
+  },
+  PRODUCTS: {
+    LIST: '/api/products',
+    DETAIL: (slug) => `/api/products/${slug}`,
+    FEATURED: '/api/products/featured',
+    DEALS: '/api/products/deals',
+  },
+  ORDERS: {
+    PLACE: '/api/orders',
+    MY_ORDERS: '/api/orders/my-orders',
+    DETAIL: (id) => `/api/orders/${id}`,
+    CANCEL: (id) => `/api/orders/${id}/cancel`,
+    VERIFY_OTP: (id) => `/api/orders/${id}/verify-otp`,
+  },
+  CART: {
+    GET: '/api/cart',
+    ADD: '/api/cart/add',
+    UPDATE: '/api/cart/update',
+    REMOVE: (id) => `/api/cart/remove/${id}`,
+    CLEAR: '/api/cart/clear',
+    APPLY_COUPON: '/api/cart/apply-coupon',
+  },
+  ADMIN: {
+    DASHBOARD_STATS: '/api/admin/dashboard/stats',
+    REVENUE_CHART: '/api/admin/dashboard/revenue-chart',
+    RECENT_ORDERS: '/api/admin/dashboard/recent-orders',
+    ALL_ORDERS: '/api/orders/admin/all',
+    UPDATE_ORDER_STATUS: (id) => `/api/orders/admin/${id}/status`,
+    NOTIFICATION_LOGS: '/api/notifications/admin/logs',
+    RESEND_NOTIFICATION: (id) => `/api/notifications/admin/resend/${id}`,
+  },
+};
