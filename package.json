@@ -2,6 +2,9 @@
   "name": "trendshops-mern",
   "version": "1.0.0",
   "description": "TrendShops - Full MERN Stack E-Commerce Platform (India)",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && npm run dev",

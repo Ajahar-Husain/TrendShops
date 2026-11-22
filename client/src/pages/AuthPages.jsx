@@ -64,7 +64,7 @@ export function RegisterPage() {
         <TextField label="Full name" name="name" autoComplete="name" required inputProps={{ minLength: 2 }} fullWidth value={form.name} onChange={update} />
         <TextField label="Email" type="email" name="email" autoComplete="email" required fullWidth value={form.email} onChange={update} />
         <TextField label="Mobile number (optional)" type="tel" name="phone" autoComplete="tel" inputProps={{ pattern: '[6-9][0-9]{9}' }} fullWidth value={form.phone} onChange={update} />
-        <TextField label="Password" type="password" name="password" autoComplete="new-password" required inputProps={{ minLength: 6 }} fullWidth value={form.password} onChange={update} />
+        <TextField label="Password" type="password" name="password" autoComplete="new-password" required inputProps={{ minLength: 8 }} fullWidth value={form.password} onChange={update} />
         <Button type="submit" variant="contained" size="large" fullWidth disabled={isLoading}>
           {isLoading ? 'Creating account…' : 'Create account'}
         </Button>

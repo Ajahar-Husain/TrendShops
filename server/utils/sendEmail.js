@@ -27,10 +27,15 @@ const sendEmail = async ({ to, subject, html, text }) => {
       html,
       text,
     });
-    console.log(`📧 Email sent to ${to}: ${info.messageId}`);
+    console.log(JSON.stringify({ level: 'info', event: 'email_sent', messageId: info.messageId }));
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`❌ Failed to send email to ${to}:`, error.message);
+    console.error(JSON.stringify({
+      level: 'error',
+      event: 'email_send_failed',
+      name: error.name || 'Error',
+      ...(process.env.NODE_ENV === 'development' && { message: error.message }),
+    }));
     return { success: false, error: error.message };
   }
 };

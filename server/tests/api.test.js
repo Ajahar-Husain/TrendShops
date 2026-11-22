@@ -22,14 +22,24 @@ test('health endpoint reports API status without requiring MongoDB', async () =>
   const response = await fetch(`${baseUrl}/api/health`);
   const body = await response.json();
 
+  assert.equal(response.status, body.database === 'connected' ? 200 : 503);
+  assert.ok(['connected', 'disconnected'].includes(body.database));
+  assert.equal(body.success, body.database === 'connected');
+  assert.equal(body.status, body.database === 'connected' ? 'ok' : 'degraded');
+});
+
+test('root API endpoint returns the service welcome response to API clients', async () => {
+  const response = await fetch(`${baseUrl}/`, { headers: { accept: 'application/json' } });
+  const body = await response.json();
+
   assert.equal(response.status, 200);
   assert.equal(body.success, true);
-  assert.equal(body.status, 'ok');
-  assert.ok(['connected', 'disconnected'].includes(body.database));
+  assert.equal(body.message, 'Welcome to TrendShops API');
+  assert.equal(body.health, '/api/health');
 });
 
 test('CORS permits both local development origins and rejects unrelated origins', async () => {
-  for (const origin of ['http://localhost:3000', 'http://127.0.0.1:3000']) {
+  for (const origin of ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001']) {
     const response = await fetch(`${baseUrl}/api/health`, { headers: { origin } });
     assert.equal(response.headers.get('access-control-allow-origin'), origin);
   }
@@ -49,6 +59,19 @@ test('registration rejects invalid input before database access', async () => {
 
   assert.equal(response.status, 400);
   assert.ok((await response.json()).errors.length > 0);
+});
+
+test('registration enforces password strength and rejects bcrypt-overlong UTF-8 input', async () => {
+  for (const password of ['short7', '😀'.repeat(19)]) {
+    const response = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'Test User', email: 'test@example.com', password }),
+    });
+
+    assert.equal(response.status, 400);
+    assert.ok((await response.json()).errors.length > 0);
+  }
 });
 
 test('login rejects invalid input before database access', async () => {

@@ -13,7 +13,7 @@ const { protect } = require('../middleware/auth');
 
 const authLimiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX) || 10,
+  max: parseInt(process.env.AUTH_RATE_LIMIT_MAX) || 10,
   message: { success: false, message: 'Too many attempts, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -30,7 +30,10 @@ const emailVerificationLimiter = rateLimit({
 const validateRegister = [
   body('name').trim().notEmpty().withMessage('Name is required').isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
   body('email').isEmail().withMessage('Valid email is required').normalizeEmail(),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+    .custom((password) => typeof password === 'string' && Buffer.byteLength(password, 'utf8') <= 72)
+    .withMessage('Password cannot exceed 72 UTF-8 bytes'),
   body('phone').optional({ values: 'falsy' }).matches(/^[6-9]\d{9}$/).withMessage('Invalid Indian mobile number'),
 ];
 
@@ -75,7 +78,7 @@ router.post('/register', authLimiter, validateRegister, async (req, res, next) =
     }
 
     const user = await User.create({ name, email, password, phone });
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken } = generateTokens(user._id, user.tokenVersion);
 
     // Store refresh token
     user.refreshToken = refreshToken;
@@ -104,7 +107,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res, next) => {
 
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password +refreshToken');
+    const user = await User.findOne({ email }).select('+password +refreshToken +tokenVersion');
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password.' });
     }
@@ -113,7 +116,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Account has been deactivated.' });
     }
 
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken } = generateTokens(user._id, user.tokenVersion);
     user.refreshToken = refreshToken;
     await user.save({ validateBeforeSave: false });
 
@@ -151,13 +154,13 @@ router.post('/refresh-token', async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-    const user = await User.findById(decoded.id).select('+refreshToken');
+    const user = await User.findById(decoded.id).select('+refreshToken +tokenVersion');
 
-    if (!user || user.refreshToken !== token) {
+    if (!user || !user.isActive || user.refreshToken !== token) {
       return res.status(401).json({ success: false, message: 'Invalid refresh token.' });
     }
 
-    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id);
+    const { accessToken, refreshToken: newRefreshToken } = generateTokens(user._id, user.tokenVersion);
     user.refreshToken = newRefreshToken;
     await user.save({ validateBeforeSave: false });
 
@@ -340,7 +343,10 @@ router.put('/me', protect, [
 // PUT /api/auth/change-password
 router.put('/change-password', protect, [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
-  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+  body('newPassword')
+    .isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+    .custom((password) => typeof password === 'string' && Buffer.byteLength(password, 'utf8') <= 72)
+    .withMessage('Password cannot exceed 72 UTF-8 bytes'),
 ], async (req, res, next) => {
   try {
     const errors = validationResult(req);
@@ -349,16 +355,20 @@ router.put('/change-password', protect, [
     }
 
     const { currentPassword, newPassword } = req.body;
-    const user = await User.findById(req.user._id).select('+password');
+    const user = await User.findById(req.user._id).select('+password +tokenVersion');
 
     if (!(await user.matchPassword(currentPassword))) {
       return res.status(400).json({ success: false, message: 'Current password is incorrect.' });
     }
 
     user.password = newPassword;
+    user.refreshToken = null;
+    user.tokenVersion += 1;
     await user.save();
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
 
-    res.json({ success: true, message: 'Password changed successfully.' });
+    res.json({ success: true, message: 'Password changed successfully. Please sign in again.' });
   } catch (error) {
     next(error);
   }

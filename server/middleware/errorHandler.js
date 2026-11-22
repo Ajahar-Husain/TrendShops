@@ -11,7 +11,7 @@ const errorHandler = (err, req, res, next) => {
   // Mongoose duplicate key
   if (err.code === 11000) {
     statusCode = 400;
-    const field = Object.keys(err.keyValue)[0];
+    const field = Object.keys(err.keyValue || {})[0] || 'Value';
     message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists.`;
   }
 
@@ -52,6 +52,15 @@ const errorHandler = (err, req, res, next) => {
 
   if (process.env.NODE_ENV === 'development') {
     console.error('❌ Error:', err);
+  } else if (statusCode >= 500) {
+    console.error(JSON.stringify({
+      level: 'error',
+      name: err.name || 'Error',
+      statusCode,
+      method: req.method,
+      path: req.path,
+    }));
+    message = 'Internal Server Error';
   }
 
   res.status(statusCode).json({

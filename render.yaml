@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: trendshops
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm --prefix server ci && npm --prefix client ci && npm --prefix client run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.15.0
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true

@@ -13,7 +13,12 @@ const connectDB = async () => {
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`❌ MongoDB connection error: ${error.message}`);
+    console.error(JSON.stringify({
+      level: 'error',
+      event: 'mongodb_connection_failed',
+      name: error.name || 'Error',
+      ...(process.env.NODE_ENV === 'development' && { message: error.message }),
+    }));
     throw error;
   }
 };

@@ -34,7 +34,12 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, 'Password is required'],
-      minlength: [6, 'Password must be at least 6 characters'],
+      minlength: [8, 'Password must be at least 8 characters'],
+      maxlength: [72, 'Password cannot exceed 72 characters'],
+      validate: {
+        validator: (value) => typeof value === 'string' && Buffer.byteLength(value, 'utf8') <= 72,
+        message: 'Password cannot exceed 72 UTF-8 bytes',
+      },
       select: false,
     },
     phone: {
@@ -71,6 +76,11 @@ const userSchema = new mongoose.Schema(
     },
     refreshToken: {
       type: String,
+      select: false,
+    },
+    tokenVersion: {
+      type: Number,
+      default: 0,
       select: false,
     },
     passwordResetToken: {

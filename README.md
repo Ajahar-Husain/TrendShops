@@ -48,9 +48,9 @@ Start a local MongoDB instance with Docker, or use an existing local MongoDB/Atl
 docker compose up -d mongodb
 ```
 
-The client defaults to the local API at `http://localhost:5000`; change `client\.env` only if your API runs elsewhere.
+In development, the client uses `http://localhost:5000` for its API. In production, it uses same-origin API requests.
 
-To enable Google address autocomplete and current-location lookup, set `VITE_GOOGLE_MAPS_API_KEY` in `client\.env`. Enable the Maps JavaScript API, Places API (New), and Geocoding API in the same Google Cloud project, with billing enabled. Restrict the key to your website's HTTP referrers and the required APIs. The key is used by the browser and must not be treated as a server secret. Without it, delivery addresses can still be entered manually.
+Address selection uses MapLibre GL, OpenFreeMap/OpenStreetMap map data and OpenStreetMap geocoding. It requires no project API key. Browser geolocation requires the user to grant permission and a secure context (HTTPS, or localhost).
 
 Seed the catalog and admin account, then run the frontend and API:
 
@@ -66,7 +66,7 @@ Open:
 - Storefront: <http://localhost:3000>
 - API health: <http://localhost:5000/api/health>
 
-The seed command creates six categories and twelve example products. It creates or promotes an admin only when both `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are set.
+The seed command creates the catalog products in `server/utils/seed.js`. It creates or promotes an admin only when both `SEED_ADMIN_EMAIL` and `SEED_ADMIN_PASSWORD` are set.
 
 ## Useful commands
 
@@ -98,6 +98,14 @@ All API routes are under `/api`:
 
 The API is implemented in `server/server.js`; models are in `server/models/`, and routes are in `server/routes/`.
 
-## Deployment notes
+## Render deployment
 
-Build the client with `npm run build` and serve `client/dist` using a static host. Deploy the API as a separate Node.js service and configure `MONGODB_URI`, strong JWT secrets, `CLIENT_URL`, and `NODE_ENV=production` in the hosting provider's secret manager. Never publish `.env` files or commit real provider credentials.
+This repository includes `render.yaml` for a single Render web service. It installs the root, server and client dependencies, builds the React app, and serves the built client and API from the same origin. Render uses `/api/health` as its health check and generates separate JWT secrets.
+
+1. Push the repository to GitHub without committing any `.env` files.
+2. In Render, choose **New + → Blueprint** and connect the repository.
+3. Set the required `MONGODB_URI` environment variable when prompted. Use MongoDB Atlas or another externally reachable MongoDB instance; Render's ephemeral filesystem is not a database.
+4. Deploy and wait for `/api/health` to return HTTP 200 with `database: connected`.
+5. Optionally add SMTP settings for email verification and UPI merchant settings if enabling real payment claims. Set these in Render's environment dashboard, never in source control.
+
+For password security, registration and password changes require at least eight characters. Keep `.env` files out of Git, use Render's secret environment variables, and rotate any credentials that have ever been committed or shared.
